@@ -1,4 +1,4 @@
-package com.lutz.algashop.billing.shared.utils;
+package com.lutz.algashop.billing.domain.utils;
 
 
 import com.fasterxml.uuid.Generators;

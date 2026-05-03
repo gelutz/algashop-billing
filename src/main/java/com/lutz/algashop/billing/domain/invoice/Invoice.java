@@ -1,7 +1,9 @@
 package com.lutz.algashop.billing.domain.invoice;
 
-import com.lutz.algashop.billing.shared.utils.IdGenerator;
+import com.lutz.algashop.billing.domain.DomainException;
+import com.lutz.algashop.billing.domain.utils.IdGenerator;
 import lombok.*;
+import org.apache.commons.lang3.StringUtils;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
@@ -39,7 +41,19 @@ public class Invoice {
 
 	private String cancelReason;
 
-	public static Invoice issue(String orderId, UUID customerId, Payer payer, Set<LineItem> items) {
+	public static Invoice issue(
+			String orderId,
+			@NonNull UUID customerId,
+			@NonNull Payer payer,
+			@NonNull Set<LineItem> items) {
+		if (StringUtils.isBlank(orderId)) {
+			throw new IllegalArgumentException(); // pode ser nulo, não pode ser uma string vazia
+		}
+
+		if (items.isEmpty()) {
+			throw new IllegalArgumentException(); // pode ser nulo, não pode ser uma string vazia
+		}
+
 		BigDecimal invoiceAmount = items.stream().map(LineItem::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
 
 		return new Invoice(
@@ -64,19 +78,56 @@ public class Invoice {
 		return Collections.unmodifiableSet(this.items);
 	}
 
-	public void markAsPaid() {
-
+	public boolean isCanceled() {
+		return InvoiceStatus.CANCELED.equals(this.getStatus());
 	}
 
-	public void cancel() {
+	public boolean isUnpaid() {
+		return InvoiceStatus.UNPAID.equals(this.getStatus());
+	}
 
+	public boolean isPaid() {
+		return InvoiceStatus.PAID.equals(this.getStatus());
+	}
+
+	public void markAsPaid() {
+		if (!isUnpaid()) {
+			throw new DomainException(
+					String.format("Invoice %s with status %s cannot be marked as paid.",
+					              this.getId(),
+					              this.getStatus().toString().toLowerCase())
+			);
+		}
+
+		setPaidAt(OffsetDateTime.now());
+		setStatus(InvoiceStatus.PAID);
+	}
+
+	public void cancel(String cancelReason) {
+		if (isCanceled()) {
+			throw new DomainException(String.format("Invoice %s is already canceled",
+			                                        this.getId()));
+		}
+
+		setCanceledAt(OffsetDateTime.now());
+		setStatus(InvoiceStatus.CANCELED);
+		setCancelReason(cancelReason);
 	}
 
 	public void assignPaymentGatewayCode(String code) {
+		if (!isUnpaid()) {
+			throw new DomainException(); // todo: quando ver isso de novo, cria um arquivo que gera as mensagens de erro igual no ordering
+		}
 
+		this.getPaymentSettings().assignGatewayCode(code);
 	}
 
 	public void changePaymentSettings(PaymentMethod method, UUID creditCardId) {
+		if (!isUnpaid()) {
+			throw new DomainException(
+					String.format("Invoice %s with status %s cannot have payment settings changed.",
+					              this.getId(), this.getStatus().toString().toLowerCase()));
+		}
 		PaymentSettings paymentSettings = PaymentSettings.brandNew(method, creditCardId);
 		this.setPaymentSettings(paymentSettings);
 	}

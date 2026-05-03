@@ -1,8 +1,11 @@
 package com.lutz.algashop.billing.domain.invoice;
 
-import com.lutz.algashop.billing.shared.utils.IdGenerator;
+import com.lutz.algashop.billing.domain.DomainException;
+import com.lutz.algashop.billing.domain.utils.IdGenerator;
 import lombok.*;
+import org.apache.commons.lang3.StringUtils;
 
+import java.util.Objects;
 import java.util.UUID;
 
 
@@ -18,13 +21,30 @@ public class PaymentSettings {
 	private String gatewayCode;
 	private PaymentMethod method;
 
-	public static PaymentSettings brandNew(PaymentMethod method, UUID creditCardId) {
+	// package private por que só é usado no aggregate (invoice)
+	static PaymentSettings brandNew(@NonNull PaymentMethod method, UUID creditCardId) {
+		if (method.equals(PaymentMethod.CREDIT_CARD)) {
+			Objects.requireNonNull(creditCardId);
+		}
+
 		return new PaymentSettings(
 				IdGenerator.generateTimeBasedUUID(),
 				creditCardId,
 				null,
 				method
 		);
+	}
+
+	void assignGatewayCode(String code) {
+		if (StringUtils.isBlank(code)) {
+			throw new IllegalArgumentException();
+		}
+
+		if (this.getGatewayCode() != null) {
+			throw new DomainException("Gateway code already assigned");
+		}
+
+		this.setGatewayCode(code);
 	}
 }
 
