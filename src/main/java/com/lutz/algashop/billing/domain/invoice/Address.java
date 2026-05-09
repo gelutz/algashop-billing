@@ -1,12 +1,14 @@
 package com.lutz.algashop.billing.domain.invoice;
 
 import com.lutz.algashop.billing.domain.utils.FieldValidations;
+import jakarta.persistence.Embeddable;
 import lombok.*;
 
 @Getter
 @Setter(AccessLevel.PRIVATE)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EqualsAndHashCode
+@Embeddable
 public class Address {
 	private String street;
 	private String number;

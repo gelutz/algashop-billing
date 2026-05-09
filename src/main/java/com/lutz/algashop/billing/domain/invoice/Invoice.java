@@ -2,6 +2,7 @@ package com.lutz.algashop.billing.domain.invoice;
 
 import com.lutz.algashop.billing.domain.DomainException;
 import com.lutz.algashop.billing.domain.utils.IdGenerator;
+import jakarta.persistence.*;
 import lombok.*;
 import org.apache.commons.lang3.StringUtils;
 
@@ -17,8 +18,10 @@ import java.util.UUID;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
+@Entity
 public class Invoice {
 
+	@Id
 	@EqualsAndHashCode.Include
 	private UUID id;
 	private String orderId;
@@ -31,12 +34,17 @@ public class Invoice {
 
 	private BigDecimal totalAmount;
 
+	@Enumerated(EnumType.STRING)
 	private InvoiceStatus status;
 
+	@OneToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
 	private PaymentSettings paymentSettings;
 
+	@ElementCollection
+	@CollectionTable(name = "invoice_line_item", joinColumns = @JoinColumn(name = "invoice_id"))
 	private Set<LineItem> items = new HashSet<>();
 
+	@Embedded
 	private Payer payer;
 
 	private String cancelReason;
@@ -129,6 +137,7 @@ public class Invoice {
 					              this.getId(), this.getStatus().toString().toLowerCase()));
 		}
 		PaymentSettings paymentSettings = PaymentSettings.brandNew(method, creditCardId);
+		paymentSettings.setInvoice(this);
 		this.setPaymentSettings(paymentSettings);
 	}
 }

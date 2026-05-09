@@ -1,17 +1,22 @@
 package com.lutz.algashop.billing.domain.invoice;
 
 import com.lutz.algashop.billing.domain.utils.FieldValidations;
+import jakarta.persistence.Embeddable;
+import jakarta.persistence.Embedded;
 import lombok.*;
 
 @Getter
 @Setter(AccessLevel.PRIVATE)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EqualsAndHashCode
+@Embeddable
 public class Payer {
 	private String fullName;
 	private String document;
 	private String phone;
 	private String email;
+
+	@Embedded
 	private Address address;
 
 	@Builder
