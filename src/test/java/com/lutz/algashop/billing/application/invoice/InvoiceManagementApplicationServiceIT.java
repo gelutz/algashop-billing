@@ -1,5 +1,8 @@
 package com.lutz.algashop.billing.application.invoice;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.*;
+
 import com.lutz.algashop.billing.domain.creditcard.CreditCard;
 import com.lutz.algashop.billing.domain.creditcard.CreditCardRepository;
 import com.lutz.algashop.billing.domain.creditcard.CreditCardTestBuilder;
@@ -8,6 +11,7 @@ import com.lutz.algashop.billing.domain.invoice.payment.Payment;
 import com.lutz.algashop.billing.domain.invoice.payment.PaymentGatewayService;
 import com.lutz.algashop.billing.domain.invoice.payment.PaymentRequest;
 import com.lutz.algashop.billing.domain.invoice.payment.PaymentStatus;
+import java.util.UUID;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,11 +19,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.UUID;
-
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.*;
 
 @SpringBootTest
 @Transactional
@@ -69,6 +68,10 @@ class InvoiceManagementApplicationServiceIT {
             generateInvoiceInput.getOrderId(),
             invoice.getOrderId()
         );
+
+        Assertions.assertEquals(0L, invoice.getVersion());
+        Assertions.assertNotEquals(null, invoice.getCreatedAt());
+        Assertions.assertNotEquals(null, invoice.getCreatedByUserId());
 
         verify(invoicingServiceSpy).issue(
             anyString(),
