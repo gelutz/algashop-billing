@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
@@ -33,10 +34,10 @@ class InvoiceManagementApplicationServiceIT {
     @Autowired
     private CreditCardRepository creditCardRepository;
 
-    @Autowired
+    @MockitoBean
     private PaymentGatewayService paymentGatewayService;
 
-    @MockitoBean
+    @MockitoSpyBean
     private InvoicingService invoicingServiceSpy;
 
     @Test
@@ -111,7 +112,9 @@ class InvoiceManagementApplicationServiceIT {
 
     @Test
     public void shouldProcessInvoicePayment() {
-        Invoice invoice = InvoiceTestBuilder.anInvoice().build();
+        Invoice invoice = InvoiceTestBuilder.anInvoice()
+            .paymentSettings(PaymentMethod.GATEWAY_BALANCE, null)
+            .build();
         invoiceRepository.saveAndFlush(invoice);
 
         Payment payment = Payment.builder()

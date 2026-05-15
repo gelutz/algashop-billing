@@ -1,4 +1,4 @@
-package com.lutz.algashop.billing.infrastructure.persistence;
+package com.lutz.algashop.billing.infrastructure;
 
 import org.hibernate.boot.model.naming.ImplicitNamingStrategy;
 import org.hibernate.boot.model.naming.ImplicitNamingStrategyComponentPathImpl;
@@ -8,8 +8,8 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class HibernateNamingConfiguration {
 
-	@Bean
-	public ImplicitNamingStrategy implicit() {
-		return new ImplicitNamingStrategyComponentPathImpl();
-	}
+    @Bean
+    public ImplicitNamingStrategy implicit() {
+        return new ImplicitNamingStrategyComponentPathImpl();
+    }
 }
