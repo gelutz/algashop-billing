@@ -3,6 +3,9 @@ package com.lutz.algashop.billing.application.invoice;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
 
+import com.lutz.algashop.billing.domain.InvoiceCanceledEvent;
+import com.lutz.algashop.billing.domain.InvoiceIssuedEvent;
+import com.lutz.algashop.billing.domain.InvoicePaidEvent;
 import com.lutz.algashop.billing.domain.creditcard.CreditCard;
 import com.lutz.algashop.billing.domain.creditcard.CreditCardRepository;
 import com.lutz.algashop.billing.domain.creditcard.CreditCardTestBuilder;
@@ -11,6 +14,7 @@ import com.lutz.algashop.billing.domain.invoice.payment.Payment;
 import com.lutz.algashop.billing.domain.invoice.payment.PaymentGatewayService;
 import com.lutz.algashop.billing.domain.invoice.payment.PaymentRequest;
 import com.lutz.algashop.billing.domain.invoice.payment.PaymentStatus;
+import com.lutz.algashop.billing.infrastructure.listener.InvoiceEventListener;
 import java.util.UUID;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -38,6 +42,9 @@ class InvoiceManagementApplicationServiceIT {
 
     @MockitoSpyBean
     private InvoicingService invoicingServiceSpy;
+
+    @MockitoSpyBean
+    private InvoiceEventListener invoiceEventListener;
 
     @Test
     public void shouldGenerateInvoice() {
@@ -79,6 +86,8 @@ class InvoiceManagementApplicationServiceIT {
             any(),
             any()
         );
+
+        verify(invoiceEventListener).listen(any(InvoiceIssuedEvent.class));
     }
 
     @Test
@@ -144,5 +153,31 @@ class InvoiceManagementApplicationServiceIT {
             any(Invoice.class),
             any(Payment.class)
         );
+
+        verify(invoiceEventListener).listen(any(InvoicePaidEvent.class));
+    }
+
+    @Test
+    public void shouldCancelInvoicePayment() {
+        Invoice invoice = InvoiceTestBuilder.anInvoice()
+            .paymentSettings(PaymentMethod.GATEWAY_BALANCE, null)
+            .build();
+        invoiceRepository.saveAndFlush(invoice);
+
+        when(
+            paymentGatewayService.capture(any(PaymentRequest.class))
+        ).thenThrow(new RuntimeException("gateway error"));
+
+        sut.processPayment(invoice.getId());
+
+        Invoice canceledInvoice = invoiceRepository
+            .findById(invoice.getId())
+            .orElseThrow();
+
+        assertTrue(canceledInvoice.isCanceled());
+
+        verify(paymentGatewayService).capture(any(PaymentRequest.class));
+
+        verify(invoiceEventListener).listen(any(InvoiceCanceledEvent.class));
     }
 }
